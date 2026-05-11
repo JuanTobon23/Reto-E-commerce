@@ -1,16 +1,38 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import useCartStore from "../../../store/cartStore";
 import { imageMap } from "../../../assets/imageMap";
 
 export default function Cart() {
-  // TODO ESTUDIANTE: agregar cupones, envio y resumen con impuestos.
   const items = useCartStore((state) => state.items);
   const incrementItem = useCartStore((state) => state.incrementItem);
   const decrementItem = useCartStore((state) => state.decrementItem);
   const removeItem = useCartStore((state) => state.removeItem);
   const getTotalPrice = useCartStore((state) => state.getTotalPrice);
 
-  const total = getTotalPrice();
+  const [couponCode, setCouponCode] = useState("");
+  const [discountPercent, setDiscountPercent] = useState(0);
+
+  const subtotal = getTotalPrice();
+  
+  const handleApplyCoupon = () => {
+    if (couponCode.toUpperCase() === "REACT20") {
+      setDiscountPercent(20);
+      alert("¡Cupón aplicado! 20% de descuento.");
+    } else if (couponCode.toUpperCase() === "DESC10") {
+      setDiscountPercent(10);
+      alert("¡Cupón aplicado! 10% de descuento.");
+    } else {
+      setDiscountPercent(0);
+      alert("Cupón inválido.");
+    }
+  };
+
+  const discountValue = subtotal * (discountPercent / 100);
+  const subtotalWithDiscount = subtotal - discountValue;
+  const tax = subtotalWithDiscount * 0.19;
+  const shipping = items.length > 0 ? 10.00 : 0;
+  const finalTotal = subtotalWithDiscount + tax + shipping;
 
   if (items.length === 0) {
     return (
@@ -84,13 +106,51 @@ export default function Cart() {
 
         <aside className="bg-white rounded-2xl border border-gray-200 p-6 h-fit">
           <h3 className="text-xl font-semibold text-gray-900 mb-4">Resumen</h3>
-          <div className="flex justify-between text-gray-600 mb-3">
-            <span>Productos</span>
-            <span>{items.length}</span>
+          
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Código de cupón</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value)}
+                placeholder="Ej. REACT20"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500 outline-none"
+              />
+              <button
+                type="button"
+                onClick={handleApplyCoupon}
+                className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium"
+              >
+                Aplicar
+              </button>
+            </div>
           </div>
-          <div className="flex justify-between text-lg font-bold text-gray-900 mb-6">
+
+          <div className="space-y-3 mb-4 text-sm text-gray-600">
+            <div className="flex justify-between">
+              <span>Subtotal ({items.length} productos)</span>
+              <span>${subtotal.toFixed(2)}</span>
+            </div>
+            {discountPercent > 0 && (
+              <div className="flex justify-between text-green-600 font-medium">
+                <span>Descuento ({discountPercent}%)</span>
+                <span>-${discountValue.toFixed(2)}</span>
+              </div>
+            )}
+            <div className="flex justify-between">
+              <span>Envío</span>
+              <span>${shipping.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Impuestos (19% IVA)</span>
+              <span>${tax.toFixed(2)}</span>
+            </div>
+          </div>
+
+          <div className="border-t border-gray-200 pt-4 flex justify-between text-lg font-bold text-gray-900 mb-6">
             <span>Total</span>
-            <span>${total.toFixed(2)}</span>
+            <span>${finalTotal.toFixed(2)}</span>
           </div>
           <Link
             to="/checkout"
