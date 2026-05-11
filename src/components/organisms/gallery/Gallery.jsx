@@ -1,35 +1,44 @@
 import { useEffect, useMemo, useState } from "react";
 import ProductCard from "../../molecules/ProductCard";
-import { getProducts } from "../../../services/productService";
+import { getProducts, getCategories } from "../../../services/productService";
 
-const ITEMS_PER_PAGE = 4;
-// TODO ESTUDIANTE: ajusta items por pagina y mejora UX de filtros/categorias.
+const ITEMS_PER_PAGE = 8;
 
 export default function Gallery() {
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
-    getProducts().then((data) => {
-      setProducts(data);
+    Promise.all([getProducts(), getCategories()]).then(([productsData, categoriesData]) => {
+      setProducts(productsData);
+      setCategories(categoriesData);
       setLoading(false);
     });
   }, []);
 
   const filteredProducts = useMemo(() => {
-    // TODO ESTUDIANTE: extender busqueda por categoria y precio.
-    const normalized = searchTerm.trim().toLowerCase();
-    if (!normalized) return products;
-
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+    
     return products.filter((product) => {
-      return (
-        product.title.toLowerCase().includes(normalized) ||
-        product.description.toLowerCase().includes(normalized)
-      );
+      const matchesSearch = normalizedSearch === "" || 
+        product.title.toLowerCase().includes(normalizedSearch) ||
+        product.description.toLowerCase().includes(normalizedSearch);
+        
+      const matchesCategory = selectedCategory === "" || product.category === selectedCategory;
+      
+      const price = Number(product.price);
+      const matchesMinPrice = minPrice === "" || price >= Number(minPrice);
+      const matchesMaxPrice = maxPrice === "" || price <= Number(maxPrice);
+      
+      return matchesSearch && matchesCategory && matchesMinPrice && matchesMaxPrice;
     });
-  }, [products, searchTerm]);
+  }, [products, searchTerm, selectedCategory, minPrice, maxPrice]);
 
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / ITEMS_PER_PAGE));
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -53,21 +62,55 @@ export default function Gallery() {
   }
 
   return (
-    <section className="p-6">
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
-        <div>
-          <h2 className="text-2xl font-bold">Nuestros Productos</h2>
+    <section className="p-6 max-w-7xl mx-auto">
+      <div className="flex flex-col xl:flex-row xl:items-end gap-4 mb-8">
+        <div className="flex-1">
+          <h2 className="text-3xl font-bold text-gray-900">Nuestros Productos</h2>
           <p className="text-sm text-gray-500 mt-1">
-            {filteredProducts.length} resultado(s)
+            Mostrando {filteredProducts.length} resultado(s)
           </p>
         </div>
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={handleSearchChange}
-          placeholder="Buscar por nombre o descripción..."
-          className="w-full sm:w-80 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-500"
-        />
+        
+        <div className="flex flex-col sm:flex-row flex-wrap gap-3">
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={handleSearchChange}
+            placeholder="Buscar producto..."
+            className="w-full sm:w-64 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-500"
+          />
+          
+          <select
+            value={selectedCategory}
+            onChange={(e) => { setSelectedCategory(e.target.value); setCurrentPage(1); }}
+            className="w-full sm:w-auto px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-500 bg-white"
+          >
+            <option value="">Todas las categorías</option>
+            {categories.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat.charAt(0).toUpperCase() + cat.slice(1)}
+              </option>
+            ))}
+          </select>
+          
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              placeholder="Min $"
+              value={minPrice}
+              onChange={(e) => { setMinPrice(e.target.value); setCurrentPage(1); }}
+              className="w-24 px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-500"
+            />
+            <span className="text-gray-500">-</span>
+            <input
+              type="number"
+              placeholder="Max $"
+              value={maxPrice}
+              onChange={(e) => { setMaxPrice(e.target.value); setCurrentPage(1); }}
+              className="w-24 px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-500"
+            />
+          </div>
+        </div>
       </div>
 
       {filteredProducts.length === 0 ? (
