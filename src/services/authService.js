@@ -46,8 +46,8 @@ export const subscribeToAuthChanges = (callback) => {
 };
 
 export const loginUser = async (email, password) => {
-  // TODO ESTUDIANTE:
-  // Si cambias a backend real, valida credenciales por API y maneja token/sesion.
+  // Nota Técnica: Aquí se implementaría la validación contra un backend JWT
+  // ej. const res = await fetch('/api/login', { method: 'POST', body: JSON.stringify({ email, password }) })
   const registeredUsers = getRegisteredUsers();
   const allUsers = [...MOCK_USERS, ...registeredUsers];
   const foundUser = allUsers.find(
@@ -66,8 +66,19 @@ export const loginUser = async (email, password) => {
 };
 
 export const registerFullUser = async (userData) => {
-  // TODO ESTUDIANTE:
-  // Agrega validaciones de formulario mas robustas (longitud, formato, etc).
+  if (!userData.name || userData.name.trim().length === 0) {
+    return { success: false, error: "El nombre es obligatorio." };
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(userData.email)) {
+    return { success: false, error: "El formato del email es inválido." };
+  }
+
+  if (!userData.password || userData.password.length < 6) {
+    return { success: false, error: "La contraseña debe tener al menos 6 caracteres." };
+  }
+
   const registeredUsers = getRegisteredUsers();
   const allUsers = [...MOCK_USERS, ...registeredUsers];
   const emailExists = allUsers.some(
@@ -96,8 +107,8 @@ export const registerFullUser = async (userData) => {
 };
 
 export const logoutUser = async () => {
-  // TODO ESTUDIANTE:
-  // Si usas backend real, invalida token/sesion en servidor aqui.
+  // Nota Técnica: Si se usara backend real, aquí se invalidaría el token/sesión en el servidor
+  // ej. await fetch('/api/logout', { method: 'POST' })
   localStorage.removeItem(LOGGED_IN_USER_KEY);
   notifyAuthChange();
   return { success: true };
