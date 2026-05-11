@@ -760,3 +760,4 @@ Reusing code from the internet is allowed, citing sources. The work is individua
 - **Diseño Responsivo**: https://developer.mozilla.org/es/docs/Learn/CSS/CSS_layout/Responsive_Design
 - **Axios (HTTP client)**: https://axios-http.com/
 - **Vite (Build tool)**: https://vitejs.dev/
+ 
